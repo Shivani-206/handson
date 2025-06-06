@@ -1,4 +1,3 @@
-import os
 import platform
 import subprocess
 
@@ -10,25 +9,40 @@ def print_system_uptime():
     try:
         if system == "Windows":
             # Use 'net stats srv' and parse output
-            output = subprocess.check_output("net stats srv", shell=True, text=True)
-            for line in output.splitlines():
+            result = subprocess.run(
+                ["net", "stats", "srv"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            for line in result.stdout.splitlines():
                 if "Statistics since" in line:
                     print(f"System uptime (since): {line.split('since', 1)[1].strip()}")
                     break
         elif system == "Linux":
             # Use /proc/uptime
-            with open("/proc/uptime", "r") as f:
-                uptime_seconds = float(f.readline().split()[0])
-                hours = int(uptime_seconds // 3600)
-                minutes = int((uptime_seconds % 3600) // 60)
-                seconds = int(uptime_seconds % 60)
-                print(f"System uptime: {hours}h {minutes}m {seconds}s")
+            try:
+                with open("/proc/uptime", "r") as f:
+                    uptime_seconds = float(f.readline().split()[0])
+                    hours = int(uptime_seconds // 3600)
+                    minutes = int((uptime_seconds % 3600) // 60)
+                    seconds = int(uptime_seconds % 60)
+                    print(f"System uptime: {hours}h {minutes}m {seconds}s")
+            except OSError as e:
+                print(f"Error opening /proc/uptime: {e}")
         elif system == "Darwin":
             # macOS: use 'uptime' command
-            output = subprocess.check_output("uptime", shell=True, text=True)
-            print(f"System uptime: {output.strip()}")
+            result = subprocess.run(
+                ["uptime"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            print(f"System uptime: {result.stdout.strip()}")
         else:
             print("Unsupported operating system for uptime retrieval.")
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed: {e}")
     except Exception as e:
         print(f"Error retrieving uptime: {e}")
 
